@@ -1,54 +1,62 @@
 from flask import Flask, render_template, request, jsonify
+from openai import OpenAI
 import os
 from dotenv import load_dotenv
-from openai import OpenAI
+
+# Load API key
+load_dotenv()
 
 app = Flask(__name__)
 
-load_dotenv()
-api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-client = OpenAI(api_key=api_key)
-
+# Home route
 @app.route("/")
-def hello_world():
+def home():
     return render_template("index.html")
 
+# Ask AI
 @app.route("/ask", methods=["POST"])
 def ask():
     question = request.form.get("question")
-        
-    response = client.responses.create(
-        model="gpt-5.4",
-        input=[
-                {"role": "system", "content": "Act like a helpful personal assistant"},
+
+    try:
+        response = client.responses.create(
+            model="gpt-5",
+            input=[
+                {"role": "system", "content": "You are a helpful AI assistant"},
                 {"role": "user", "content": question}
             ],
-            temperature=0.7,
-            max_output_tokens=512
-    )
-        
-    answer = response.output_text.strip()
-    return jsonify({"response": answer}), 200
+            max_output_tokens=300
+        )
 
+        answer = response.output[0].content[0].text.strip()
+
+        return jsonify({"response": answer})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# Summarize email
 @app.route("/summarize", methods=["POST"])
 def summarize():
-    email_text = request.form.get("email")
-    prompt = f"summarize the following email in 2-3 sentences: {email_text}"
-        
-    response = client.responses.create(
-        model="gpt-5.4",
-        input=[
-                {"role": "system", "content": "Act like an expert email assistant"},                
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.3,
-            max_output_tokens=512
-    )
-        
-    summary = response.output_text.strip()
-    return jsonify({"response": summary}), 200
+    email = request.form.get("email")
+
+    try:
+        response = client.responses.create(
+            model="gpt-5",
+            input=f"Summarize this email:\n{email}",
+            max_output_tokens=200
+        )
+
+        summary = response.output[0].content[0].text.strip()
+
+        return jsonify({"response": summary})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
     app.run(debug=True)
-

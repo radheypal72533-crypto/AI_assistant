@@ -6,6 +6,13 @@
     font-family: Arial, Helvetica, sans-serif;
 }
 
+div{
+    border: none;
+    width: 80%;
+    margin: auto;
+    padding: 20px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
 /* Body */
 body {
     background: #f5f7fb;
